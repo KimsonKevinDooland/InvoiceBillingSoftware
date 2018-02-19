@@ -11,7 +11,7 @@ class InventoryController extends Controller
 {
     public function index()
     {
-
+      
 		$product = \App\Product::where('product_code', '=', 'SDE-104')->first();
 		$product_inventory  = $product->invetories;
 

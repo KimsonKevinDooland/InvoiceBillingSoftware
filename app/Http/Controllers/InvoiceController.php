@@ -8,6 +8,8 @@ use App\Product as Product;
 use PDF;
 use Redirect;
 use DB;
+use \App\Invoice;
+use \App\Invoice_product;
 
 class InvoiceController extends Controller
 {
@@ -21,18 +23,74 @@ class InvoiceController extends Controller
             return $pdf->download('htmltopdfview');
         }
         return view('htmltopdfview');
-    }
+    }//EOF
+     public function getproductdata(Request $request){
 
-     public function barcodeget(Request $request){
+          $products = DB::table('products')->where('barcode_number', $request->message)->first();
 
-      // $products = Product::all()->toArray();
-    $products = DB::table('products')->where('barcode_number', $request->message)->first();
-        
-      if($products)
-      {   
-             return response()->json($products); 
-      }
-      
+                $invoice_number = $request->invoice_number;
+                // save data in invoices table
+                if($products)
+                {
+                          $newInvoice_product = new Invoice_product([
+                            'invoice_number' => $invoice_number,
+                            'products_id' => $products->id,
+                            'product_qty'=>'1',
+                          ]);
+                          $newInvoice_product->save();
+                }
+            if($products)
+            {   
+                   return response()->json($products); 
+            }
+         }//EOF
 
-   }
+         public function save_user(Request $request)
+         {
+                $invoice_number = $request->invoice_number;
+                $client_name = $request->client_name;
+                $client_address = $request->client_address;
+                $client_phone = $request->client_phone;
+
+                if($client_phone)
+                {
+                       $newInvoice = new Invoice([
+                                'name' => $client_name,
+                                'address' => $client_address,
+                                'phone' => $client_phone,
+                                'invoice_number' => $invoice_number,
+                         ]);  
+                        if($newInvoice->save() && $client_phone)
+                        {   
+                               return response()->json($newInvoice); 
+                        }      
+                }
+
+         }//EOF
+
+         public function delete_row(Request $request)
+         {
+            if($request)
+            {
+                $removeInvoiceProduct = DB::table('invoice_products')
+                ->where('invoice_number',$request->invoice_number)
+                ->where('products_id', $request->products_id)
+                ->delete();
+                return response()->json($request);                     
+            }
+         }//EOF
+
+         public function update_qty(Request $request)
+         {
+            if($request)
+            {
+                $updateInvoiceProductqty  = DB::table('invoice_products')
+                ->where('invoice_number',$request->invoice_number)
+                ->where('products_id', $request->products_id)
+                ->update(['product_qty' => $request->product_qty]);
+
+              return response()->json($request); 
+
+            }
+         }//EOF
 }
