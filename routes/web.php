@@ -21,10 +21,15 @@ Route::group(['middleware' => ['auth']], function () {
         $invoice_number = mt_rand();
         return view('invoice.new_invoice', compact('invoice_number')); 
     });
-    Route::post('/getbarcode','InvoiceController@barcodeget');
+    Route::post('/getbarcode','InvoiceController@getproductdata');
+
+
+    Route::post('/submit_invoice','InvoiceController@save_user');
+    Route::post('/delete_row','InvoiceController@delete_row');
+    Route::post('/update_row','InvoiceController@update_qty');
+
 
 }); //end of middleware
-
 
 Route::group(['middleware' => ['admin']], function () {
 	Route::resource('product', 'ProductController');
@@ -32,10 +37,8 @@ Route::group(['middleware' => ['admin']], function () {
 
 }); //end ADMIN middleware
 
-
 //invoice pdf download
 Route::get('htmltopdfview',array('as'=>'htmltopdfview','uses'=>'InvoiceController@htmltopdfview'));
-
 
 //search
 Route::any('/search',function(){
@@ -53,4 +56,3 @@ Route::any('/search_product',function(){
         return view('admin.products')->withDetails($product)->withQuery($q );
     else return view ('admin.products')->withMessage('No Details found. Try to search again !');
 });
-

@@ -1,10 +1,22 @@
 @extends('layouts.app')
-
 @section('content')
   <div class="container">
     <h1>Create Invoice</h1>
-    <h5 class="send_invoice">Invoice Number {{$invoice_number}}</h5>
-
+     <h5>Invoice Number <span class="send_invoice" data-invoice="{{$invoice_number}}">{{$invoice_number}}</span></h5>
+    <div class="row">
+        <div class="col-md-4">
+              <label>Client</label><br>
+              <input id="client_name" type="text" name=""  placeholder="Client">
+        </div>    
+        <div class="col-md-4">     
+            <label>Client  Address</label><br>
+            <textarea placeholder="Client Address"  rows="4" cols="50" id="client_address"></textarea>
+        </div>      
+         <div class="col-md-4">     
+            <label>Client  Phone number</label><br>
+            <input type="number" id="client_phone" name="" placeholder="phone number"> 
+        </div>  
+    </div>
     <input class="getinfo" name="barcode_txt" onchange="clickbtn()" placeholder="Barcode Number" autofocus ></input>
     <button id="postbutton" class="btn btn-default">Post via ajax!</button>
     <div class="writeinfo"></div>   
@@ -19,18 +31,19 @@
                                 <th>Product Desc</th>
                                 <th>Barcode Number</th>
                                 <th>Product Qty</th>
+                                <th>Action</th>
+                                <th>Total Price</th>
                             </tr>
                         </thead>
                         <tbody class="item_ho text-center"> 
-                         
                         </tbody>
-
                     </table>
                     <button onclick="get_values_from_div()">hey</button>
                     <br>QTY<input type="" name="" id="get_qty_value"> <br>
                     Price<input type="" name="" id="get_price_value">
 
         </div><!-- /.panel-body -->
+        <button class="btn btn-success" id="submit_invoice">Submit</button>
 </div>
 @endsection
 
@@ -41,7 +54,6 @@
 
     <script>
         $(document).ready(function(){
-
             //focous of input
             $('input[name=barcode_txt]').focus();
             var CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
@@ -51,53 +63,134 @@
                     url: '/getbarcode',
                     type: 'POST',
                     /* send the csrf-token and the input to the controller */
-                    data: {_token: CSRF_TOKEN, message:$(".getinfo").val()},
+                    data: {
+                        _token: CSRF_TOKEN, 
+                        message:$(".getinfo").val(), 
+                        invoice_number:$(".send_invoice").data("invoice"),
+                        client_name:$("#client_name").val(),
+                        client_address:$("#client_address").val(),
+                        client_phone:$("#client_phone").val(),
+                    },
                     dataType: 'JSON',
                     /* remind that 'data' is the response of the AjaxController */
                     success: function (data) { 
-                        $(".item_ho").append("<tr class='item" + data.id + "'><td>" + data.id + "</td><td>" + data.product_name + "</td><td>" + data.product_code + "</td></td><td id='price'>" + " <input type='number' name='total_price_qty' value='"+data.price+"' onchange='get_price_value()' id='product_price_value'>" + "</td></td><td>" + data.product_desc + "</td><td>" + data.barcode_number +"</td><td>" + " <input type='number' name='total_qty_value' value='10' size='5' id='product_qty_value' onchange='get_qty_value()'> "+  "</td></tr>"); 
-
+                        $(".item_ho").append("<tr class='item" + data.id + "'><td>" + data.id + "</td><td>" + data.product_name + "</td><td>" + data.product_code + "</td></td><td id='price_value'>"+data.price+"</td></td><td>" + data.product_desc + "</td><td>" + data.barcode_number +"</td><td>" + " <input type='number' name='total_qty_value' value='3' size='5' id='product_qty_value' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'> "+"</td><td>"+ "<a id='remove_row' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'>x</a>"+"</td>"+"<td id='total_price'></td>"+"</tr>"); 
                             // save qty value
                            document.getElementById('get_qty_value').value = document.getElementById('product_qty_value').value;
-                           //save price value
-                           document.getElementById('get_price_value').value = document.getElementById('product_price_value').value;
+                            // calculating the price.
+                           // var $product_price = $('#price_value').text();
+                           // var $qty = $('#product_qty_value').val();
+                           //  $('#total_price').text($product_price * $qty);
+
+                                var table= $("table  tbody");
+                                table.find('tr').each(function (i, el) {
+                                    var $total_amount
+                                    var $tds = $(this).find('td'),
+                                     amount = $tds.eq(3).text(),
+                                     price_html = $tds.eq(6).html(),
+                                     price = $(price_html).val();
+                                     total_amount_tab = $tds.eq(8).text();
+                                     $total_amount = parseInt(amount) * parseInt(price);
+                                    $tds.eq(8).text($total_amount);
+                                 });
+
                     }
                 });
-                    //clearing the filed for the barcode.
+
+                    //clearing the field for the barcode.
                     $(".getinfo").val("");
                     //focusing the cursor back to the input.
                     $('input[name=barcode_txt]').focus();
-             });
 
+                    //calculating the total amount of all the rows.
+
+             });
                     //auto click when the value is inserted into the field.
                     $(".getinfo").on("change paste keyup" ,function(){ // change paste keyup
                              $('#postbutton').trigger('click');
                     });
 
+                     $("#submit_invoice").click(function(){
+
+                        var table= $("table  tbody");
+
+                        table.find('tr').each(function (i, el) {
+                            var $total_amount
+                            var $tds = $(this).find('td'),
+                             amount = $tds.eq(8).text(),
+                               $total_amount = $total_amount + amount;
+                                alert($total_amount);
+                               
+                            // do something with productId, product, Quantity
+                        });
+                            $.ajax({
+                                /* the route pointing to the post function */
+                                url: '/submit_invoice',
+                                type: 'POST',
+                                /* send the csrf-token and the input to the controller */
+                                data: {
+                                    _token: CSRF_TOKEN, 
+                                    invoice_number:$(".send_invoice").data("invoice"),
+                                    client_name:$("#client_name").val(),
+                                    client_address:$("#client_address").val(),
+                                    client_phone:$("#client_phone").val(),
+                                },
+                                dataType: 'JSON',
+                                /* remind that 'data' is the response of the AjaxController */
+                                success: function (data) { 
+                                    alert(data.invoice_number + " submited your data");
+                                }
+                            });
+                    });
+                     //Delete row trigger
+                      $(document).on('click', '#remove_row', function() {
+                        //deletes the row that is selected.
+                        $(this).parent().parent().remove();
+                        $.ajax({
+                            type: 'POST',
+                            url: '/delete_row',
+                            data: {
+                                '_token': $('input[name=_token]').val(),
+                                invoice_number:$(".send_invoice").data("invoice"),
+                                products_id:$(this).data("id"),
+                            },
+                            success: function(data) {
+                                alert(data.products_id);
+                            }
+                        });     
+                    });
+                      //Update the qty of the row.
+                      $(document).on('change', '#product_qty_value', function() {
+                           
+                        // document.getElementById('get_qty_value').value = document.getElementById('product_qty_value').value;
+                        document.getElementById('get_qty_value').value = $(this).val();
+                             $parent_html = $(this).parent().html();
+                             $hey = $($parent_html).val();
+                             $($hey).val($(this).val());
+                         //calculating the price.
+                         
+                            // getting the row data
+                            parent_data = $(this).parent().parent().html();
+                            product_price = $(parent_data).eq(3).text();
+                            qty = $(this).val();
+                           $change_total = product_price * qty;
+                            alert($change_total);
+                           check_total = $(parent_data).eq(8).text($change_total);
+                           // console.log(check_total.text($change_total));
+                           $.ajax({
+                            type: 'POST',
+                            url: '/update_row',
+                            data: {
+                                '_token': $('input[name=_token]').val(),
+                                invoice_number:$(".send_invoice").data("invoice"),
+                                products_id:$(this).data("id"),
+                                product_qty:$(this).val(),
+                            },
+                            success: function(data) {
+                                alert(data.product_qty);
+                            }
+                        });     
+                      });
        });    
-
-         //get table data values
-        function get_values_from_div()
-        {
-            var Row = document.getElementsByClassName("item");
-            var Cells = document.getElementsByTagName("td");
-             alert(Cells[5].innerText);
-            var barcode_value = Cells[5].innerText;
-            get_qty_value();
-            get_price_value();
-        }
-        //get qty value which the user enters
-        function get_qty_value()
-        {
-            document.getElementById('get_qty_value').value = document.getElementById('product_qty_value').value;
-        }
-                  
-        // get the edited price value
-        function get_price_value()
-        {
-            document.getElementById('get_price_value').value = document.getElementById('product_price_value').value;
-        }
-
-
-
+    
     </script>

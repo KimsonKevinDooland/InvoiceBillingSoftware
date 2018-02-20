@@ -12,7 +12,12 @@ class Invoice extends Model
 
      public function products()
     {
-    	return $this->hasMany('App\Product');
+    	return $this->hasMany('\App\Product');
+    }
+
+    public function invoice_products()
+    {
+    	return $this->hasMany('\App\invoice_product','invoice_number', 'invoice_number');
     }
 
     

@@ -15,4 +15,9 @@ class Product extends Model
     {
     	return $this->hasOne('\App\Invetory', 'product_id');
     }
+
+    public function invoice_products()
+    {
+    	return $this->hasMany('\App\Invoice_product');
+    }
 }
