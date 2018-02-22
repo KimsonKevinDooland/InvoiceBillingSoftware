@@ -60,27 +60,11 @@ class InvoiceController extends Controller
                                 'phone' => $client_phone,
                                 'invoice_number' => $invoice_number,
                          ]);  
-                 
-                //get all the products for that bill and deduct from the main inventory the qty
-             $inventory_products =  DB::table('invoice_products')->where('invoice_number', $invoice_number)->get();
-
-             foreach ($inventory_products as $product) {
-                 $product_id = $product->products_id;
-                 $product_qty = $product->product_qty;
-                 $main_inventory_products = DB::table('invetories')->where('product_id', $product_id)->first();
-                 $main_inventory_product_qty=$main_inventory_products->product_qty;
-                 $now_qty = $main_inventory_product_qty - $product_qty;
-
-                 DB::table('invetories')
-                     ->where('product_id', $product_id)
-                     ->update(['product_qty' => $now_qty]);
-             }
-                
-              if($newInvoice->save() && $client_phone)
+                        if($newInvoice->save() && $client_phone)
                         {   
                                return response()->json($newInvoice); 
                         }      
-         }
+                }
 
          }//EOF
 
