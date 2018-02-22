@@ -11,7 +11,7 @@ class InventoryController extends Controller
 {
     public function index()
     {
-
+      
 		$product = \App\Product::where('product_code', '=', 'SDE-104')->first();
 		$product_inventory  = $product->invetories;
 
@@ -43,6 +43,7 @@ class InventoryController extends Controller
        }else {
         Session::flash('message', "Product didn't get stored");
         return redirect('/inventory');
+     
        }
     }
 }
