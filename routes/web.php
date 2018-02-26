@@ -11,27 +11,22 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::group(['middleware' => ['auth']], function () {
-
 	Route::get('/home', 'HomeController@index')->name('home');
 	//PRODUCTS
 	Route::get('product_view', 'ProductController@index');
-
     //invoice generation get barcode
     Route::get('invoice', function(){
         $invoice_number = mt_rand();
         return view('invoice.new_invoice', compact('invoice_number')); 
     });
     Route::post('/getbarcode','InvoiceController@getproductdata');
-
-
     Route::post('/submit_invoice','InvoiceController@save_user');
     Route::post('/delete_row','InvoiceController@delete_row');
     Route::post('/update_row','InvoiceController@update_qty');
 
-
 }); //end of middleware
 
-Route::group(['middleware' => ['admin']], function () {
+    Route::group(['middleware' => ['admin']], function () {
 	Route::resource('product', 'ProductController');
 	Route::resource('inventory', 'InventoryController');
 
@@ -48,7 +43,7 @@ Route::any('/search',function(){
         return view('inventory.index')->withDetails($product)->withQuery($q );
     else return view ('inventory.index')->withMessage('No Details found. Try to search again !');
 });
-
+ 
 Route::any('/search_product',function(){
     $q = Input::get ( 'q' );
     $product = Product::where('product_code','LIKE','%'.$q.'%')->orWhere('product_name','LIKE','%'.$q.'%')->orWhere('barcode_number','LIKE','%'.$q.'%')->get();

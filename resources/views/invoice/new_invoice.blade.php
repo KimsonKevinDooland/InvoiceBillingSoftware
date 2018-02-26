@@ -46,7 +46,6 @@
         <button class="btn btn-success" id="submit_invoice">Submit</button>
 </div>
 @endsection
-
     <!-- provide the csrf token -->
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     {{-- <link rel="stylesheet" href="{{asset('css/app.css')}}"> --}}
@@ -74,34 +73,28 @@
                     dataType: 'JSON',
                     /* remind that 'data' is the response of the AjaxController */
                     success: function (data) { 
-                        $(".item_ho").append("<tr class='item" + data.id + "'><td>" + data.id + "</td><td>" + data.product_name + "</td><td>" + data.product_code + "</td></td><td id='price_value'>"+data.price+"</td></td><td>" + data.product_desc + "</td><td>" + data.barcode_number +"</td><td>" + " <input type='number' name='total_qty_value' value='3' size='5' id='product_qty_value' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'> "+"</td><td>"+ "<a id='remove_row' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'>x</a>"+"</td>"+"<td id='total_price'></td>"+"</tr>"); 
+                        $(".item_ho").append("<tr class='item" + data.id + "'><td>" + data.id + "</td><td>" + data.product_name + "</td><td>" + data.product_code + "</td><td>" + " <input type='number' value='"+data.price+"' size='5' id='price_value' disabled> "+"</td></td><td>" + data.product_desc + "</td><td>" + data.barcode_number +"</td><td>" + " <input type='number' name='total_qty_value' value='1' size='5' id='product_qty_value' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'> "+"</td><td>"+ "<a id='remove_row' data-id='" + data.id + "' data-barcode_number='" + data.barcode_number + "'>x</a>"+"</td>"+"<td id='total_price'></td>"+"</tr>"); 
                             // save qty value
                            document.getElementById('get_qty_value').value = document.getElementById('product_qty_value').value;
-                            // calculating the price.
-                           // var $product_price = $('#price_value').text();
-                           // var $qty = $('#product_qty_value').val();
-                           //  $('#total_price').text($product_price * $qty);
-
+                            // calculating the price and storing the data in the last row.
                                 var table= $("table  tbody");
                                 table.find('tr').each(function (i, el) {
                                     var $total_amount
                                     var $tds = $(this).find('td'),
-                                     amount = $tds.eq(3).text(),
-                                     price_html = $tds.eq(6).html(),
-                                     price = $(price_html).val();
+                                     amount_row = $tds.eq(3),
+                                     amount = $(amount_row).find('input').val(),
+                                     qty = $tds.eq(6),
+                                     price = $(qty).find('input').val();
                                      total_amount_tab = $tds.eq(8).text();
-                                     $total_amount = parseInt(amount) * parseInt(price);
-                                    $tds.eq(8).text($total_amount);
+                                     $total_amount = parseInt(amount) * parseInt(price)||1;
+                                     $tds.eq(8).text($total_amount);
                                  });
-
                     }
                 });
-
                     //clearing the field for the barcode.
                     $(".getinfo").val("");
                     //focusing the cursor back to the input.
                     $('input[name=barcode_txt]').focus();
-
                     //calculating the total amount of all the rows.
 
              });
@@ -111,17 +104,13 @@
                     });
 
                      $("#submit_invoice").click(function(){
-
                         var table= $("table  tbody");
-
                         table.find('tr').each(function (i, el) {
                             var $total_amount
                             var $tds = $(this).find('td'),
                              amount = $tds.eq(8).text(),
                                $total_amount = $total_amount + amount;
                                 alert($total_amount);
-                               
-                            // do something with productId, product, Quantity
                         });
                             $.ajax({
                                 /* the route pointing to the post function */
@@ -138,7 +127,7 @@
                                 dataType: 'JSON',
                                 /* remind that 'data' is the response of the AjaxController */
                                 success: function (data) { 
-                                    alert(data.invoice_number + " submited your data");
+                                    alert(data);
                                 }
                             });
                     });
@@ -161,22 +150,20 @@
                     });
                       //Update the qty of the row.
                       $(document).on('change', '#product_qty_value', function() {
-                           
                         // document.getElementById('get_qty_value').value = document.getElementById('product_qty_value').value;
                         document.getElementById('get_qty_value').value = $(this).val();
                              $parent_html = $(this).parent().html();
                              $hey = $($parent_html).val();
                              $($hey).val($(this).val());
                          //calculating the price.
-                         
-                            // getting the row data
-                            parent_data = $(this).parent().parent().html();
-                            product_price = $(parent_data).eq(3).text();
-                            qty = $(this).val();
-                           $change_total = product_price * qty;
-                            alert($change_total);
-                           check_total = $(parent_data).eq(8).text($change_total);
-                           // console.log(check_total.text($change_total));
+                  $('table input').on('input', function() {
+                    var $tr = $(this).closest('tr'); // get tr which contains the input
+                    var tot = 1; // variable to sore sum
+                    $('input', $tr).each(function() { // iterate over inputs
+                      tot *= Number($(this).val()) || 1 // parse and multiply value, if NaN then add 0
+                    });
+                    $('td:last', $tr).text(tot); // update last column value
+                  }).trigger('input'); // trigger input to set initial value in columns
                            $.ajax({
                             type: 'POST',
                             url: '/update_row',
