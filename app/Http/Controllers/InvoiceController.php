@@ -44,14 +44,12 @@ class InvoiceController extends Controller
                    return response()->json($products); 
             }
          }//EOF
-
          public function save_user(Request $request)
          {
                 $invoice_number = $request->invoice_number;
                 $client_name = $request->client_name;
                 $client_address = $request->client_address;
                 $client_phone = $request->client_phone;
-
                 if($client_phone)
                 {
                        $newInvoice = new Invoice([
@@ -60,14 +58,32 @@ class InvoiceController extends Controller
                                 'phone' => $client_phone,
                                 'invoice_number' => $invoice_number,
                          ]);  
-                        if($newInvoice->save() && $client_phone)
+       if($newInvoice->save() && $client_phone)
+                //get all the products for that bill and deduct from the main inventory the qty
+             $inventory_products =  DB::table('invoice_products')->where('invoice_number', $invoice_number)->get();
+             //updating each product in the invoice list
+                 foreach ($inventory_products as $product) {
+                     $product_id = $product->products_id;
+                     $product_qty = $product->product_qty;
+                     $main_inventory_products = DB::table('invetories')->where('product_id', $product_id)->first();
+                     $main_inventory_product_qty=$main_inventory_products->product_qty;
+                     $now_qty = $main_inventory_product_qty - $product_qty;
+                     //check if product is in the inventory
+                      if($now_qty>0){
+                         DB::table('invetories')
+                             ->where('product_id', $product_id)
+                             ->update(['product_qty' => $now_qty]);
+                        }else {
+                            $error = 'no product in the inventory';
+                               return response()->json($error); 
+                        }
+                    }
+                        //returning back response
                         {   
                                return response()->json($newInvoice); 
                         }      
-                }
-
+             }
          }//EOF
-
          public function delete_row(Request $request)
          {
             if($request)
